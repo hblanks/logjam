@@ -1,0 +1,8 @@
+#!python
+
+import sys
+
+import logjam.compress
+
+if __name__ == '__main__':
+    logjam.compress.main(sys.argv)
