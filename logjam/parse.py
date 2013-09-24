@@ -4,6 +4,7 @@ Common helpers for working with ISO8601 logfile names.
 
 import collections
 import datetime
+import logging
 import re
 
 #
@@ -56,6 +57,7 @@ def parse_filename(filename):
     """
     match = HOUR_MINUTE_PAT.search(filename)
     if not match:
+        logging.debug('parse.parse_filename: no match for %s', filename)
         return
 
     prefix, year, mo, day, minute, hour, suffix, extension = match.groups()
@@ -68,6 +70,7 @@ def parse_filename(filename):
     except ValueError:
         return
 
+    # logging.debug('parse.parse_filename: parsed %s')
     return LogFile(
         prefix,
         timestamp,
