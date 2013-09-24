@@ -82,7 +82,6 @@ def yield_old_logfiles(filenames, current_timestamp):
 def compress_path(
     path, compress_cmd_args, compress_extension, archive_dir, os_rename=os.rename,
     ):
-    print 'COMPRESS_PATH', locals() # path, compress_extension, compress_cmd_args, archive_dir
     log_dir = os.path.dirname(path)
     log_filename = os.path.basename(path)
     dst_path = os.path.join(archive_dir, log_filename + compress_extension)
