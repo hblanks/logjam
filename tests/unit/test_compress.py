@@ -184,7 +184,7 @@ class TestCompress(unittest.TestCase):
         t = expected = None
         os_rename, rename_args = self._make_os_rename()
         try:
-            with tempfile.NamedTemporaryFile() as t:
+            with tempfile.NamedTemporaryFile(delete=False) as t:
                 archive_dir = os.path.join(os.path.dirname(t.name), 'archive')
                 expected = os.path.join(
                     archive_dir,
@@ -199,7 +199,13 @@ class TestCompress(unittest.TestCase):
                     )
                 self.assertEqual(expected, actual)
                 self.assertEqual([expected], rename_args[1:])
+
+                # ... and check that compress_path() deleted the
+                # original file.
+                self.assertFalse(os.path.isfile(t.name)
         finally:
+            if t and os.path.isfile(t.name):
+                os.unlink(t.name)
             if expected and os.path.isfile(expected):
                 os.unlink(expected)
 
@@ -220,6 +226,10 @@ class TestCompress(unittest.TestCase):
                     )
                 self.assertEqual(expected, actual)
                 self.assertEqual([None], rename_args)
+
+                # ... and check that compress_path() did NOT delete the
+                # original file.
+                self.assertTrue(os.path.isfile(t.name)
         finally:
             if rename_args[0] and os.path.isfile(rename_args[0]):
                 os.unlink(rename_args[0])

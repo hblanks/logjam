@@ -101,7 +101,11 @@ def compress_path(
                     )
                 return
 
-            os_rename(f.name, dst_path)
+        os_rename(f.name, dst_path)
+
+        if os.path.isfile(path):
+            os.unlink(path)
+
     finally:
         if f and os.path.isfile(f.name):
             os.unlink(f.name)
