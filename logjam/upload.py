@@ -6,6 +6,7 @@ import argparse
 import logging
 import os
 import os.path
+import sys
 import urlparse
 
 from . import parse
@@ -110,14 +111,17 @@ def scan_and_upload(log_archive_dir, log_upload_uri, persist_hours=None):
     uploader.connect()
     error = uploader.check_uri()
     if error:
-	logging.error('Invalid upload_uri %s: %s', log_upload_uri, error)
-	sys.exit(1) # take the short way out
+        logging.error('Invalid upload_uri %s: %s', log_upload_uri, error)
+        print >> sys.stderr, 'Invalid upload_uri %s: %s' % (
+            log_upload_uri, error
+            )
+        sys.exit(1) # take the short way out
 
     uploaded, not_uploaded = scan_and_upload_filenames(
         log_archive_dir, filenames, uploader
         )
 
-    if persist_count:
+    if persist_hours:
         # TODO: prune old logfiles here using uploaded_set
         raise NotImplementedError
 
