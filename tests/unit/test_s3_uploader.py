@@ -371,7 +371,9 @@ class TestS3Uploader(unittest.TestCase):
             return s3_conn
 
         def storage_uri_for_key(key):
-            return 's3://{}/{}'.format(key.bucket.name, key.name)
+            return boto.storage_uri(
+                's3://{}/{}'.format(key.bucket.name, key.name)
+                )
 
         if upload_uri is None:
             upload_uri = 's3://nt8.logs.us-west-2/{prefix}/{year}/{month}/{day}/{filename}'

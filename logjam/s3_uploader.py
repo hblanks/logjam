@@ -233,7 +233,7 @@ class S3Uploader(BaseUploader):
         try:
             self.s3_conn.get_bucket(u.bucket_name)
         except boto.exception.S3ResponseError:
-            return 'Failed to find bucket for {}'.format(self.upload_uri)
+            return 'Failed to find bucket {}'.format(u.bucket_name)
 
 
 
