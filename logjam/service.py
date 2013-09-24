@@ -1,10 +1,20 @@
 """ Helpers for long-running services in logjam """
 
+import logging
 import time
 
 MIN_SLEEP_TIME = 1
 
 DEFAULT_INTERVAL = 60
+
+def configure_logging(log_level):
+    """
+    Takes a log level such as 'info'.
+
+    Configures basic logging to stderr with that level.
+    """
+    logging.basicConfig(level=getattr(logging, log_level.upper()))
+
 
 def do_forever(do_func, interval_secs, *args, **kwargs):
     """

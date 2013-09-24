@@ -48,6 +48,9 @@ def select_superseded_by_timestamp(logfiles, current_timestamp):
 
 def yield_old_logfiles(filenames, current_timestamp):
     logfiles_by_group = parse.group_filenames(filenames)
+    # logging.debug('compress.yield_old_logfiles: group %r',
+    #     logfiles_by_group
+    #     )
     for logfiles in logfiles_by_group.itervalues():
         old_logfiles = set(
             select_superseded_by_new_file(logfiles)
@@ -121,6 +124,9 @@ def compress_path(
 
 def scan_and_compress(log_dir, compress_cmd_args, compress_extension):
 
+    logging.debug('compress.scan_and_compress: %r %r %r',
+        log_dir, compress_cmd_args, compress_extension
+        )
     archive_dir = os.path.join(log_dir, 'archive')
     if not os.path.isdir(archive_dir):
         os.mkdir(archive_dir)
@@ -158,6 +164,12 @@ def make_parser():
             'continuously.'
             )
         )
+    parser.add_argument(
+        '--log-level', '-l',
+        choices=('debug', 'info', 'warning', 'error', 'critical'),
+        default='info',
+        help='Log level to use for logjam\'s own logging',
+        )
     return parser
 
 
@@ -167,6 +179,8 @@ def main(argv):
 
     compress_cmd_args = ('gzip', '-c')
     compress_extension = '.gz'
+
+    service.configure_logging(args.log_level)
 
     if args.once:
         scan_and_compress(args.log_dir, compress_cmd_args, compress_extension)

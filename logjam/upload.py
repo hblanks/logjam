@@ -70,6 +70,12 @@ def scan_and_upload_filenames(log_archive_dir, filenames, uploader):
     logfiles = filter(None, map(parse.parse_filename, filenames))
 
     uploaded, not_uploaded = uploader.scan_remote(logfiles)
+    # logging.debug('scan_and_upload: uploaded %r',
+    #     [l.filename for l in sorted(uploaded)]
+    #     )
+    # logging.debug('scan_and_upload: not_uploaded %r',
+    #     [l.filename for l in sorted(not_uploaded)]
+    #     )
 
     # Make a fresh, sorted list as we'll be mutating it.
     for logfile in sorted(not_uploaded):
@@ -79,6 +85,9 @@ def scan_and_upload_filenames(log_archive_dir, filenames, uploader):
                 logfile.filename
                 )
         else:
+            logging.info('scan_and_upload: uploaded %s',
+                logfile.filename
+                )
             not_uploaded.remove(logfile)
             uploaded.add(logfile)
 
@@ -139,6 +148,12 @@ def make_parser():
             'continuously.'
             )
         )
+    parser.add_argument(
+        '--log-level', '-l',
+        choices=('debug', 'info', 'warning', 'error', 'critical'),
+        default='info',
+        help='Log level to use for logjam\'s own logging',
+        )
     return parser
 
 
@@ -152,6 +167,11 @@ def main(argv):
                 args.log_archive_dir
                 )
             )
+
+    service.configure_logging(args.log_level)
+
+    # Tune down boto logging
+    logging.getLogger('boto').setLevel(logging.WARNING)
 
     if args.once:
         scan_and_upload(
