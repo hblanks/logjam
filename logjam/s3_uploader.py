@@ -159,7 +159,7 @@ def get_logfile_uri(upload_uri, logfile):
 
         s3://nt8.logs.us-west-2/{prefix}/{year}/{month}/{day}/{filename}'
 
-    and a LogFile. Returns the corresponding URL, such as:
+    and a LogFile. Returns the corresponding URL as a string, such as:
 
         s3://nt8.logs.us-west-2/haproxy/2013/07/27/haproxy-20130727T0100Z-i-34aea3fe.log.gz
     """
@@ -215,6 +215,7 @@ class S3Uploader(BaseUploader):
 
 
     def _get_bucket(self, bucket_name):
+        logging.debug('s3_uploader.S3Uploader._get_bucket: %s', bucket_name)
         bucket = self.bucket_cache.get(bucket_name)
         if bucket is None:
             bucket = self.s3_conn.get_bucket(bucket_name)
@@ -254,14 +255,12 @@ class S3Uploader(BaseUploader):
         for uri in parent_dir_uris:
             u = boto.storage_uri(uri)
             bucket = self._get_bucket(u.bucket_name)
-            logging.debug('S3Uploader.scan_remote: listing %s', uri)
+            logging.debug('S3Uploader.scan_remote: listing %r', uri)
             for key in bucket.list(prefix=u.object_name):
-                logfile_uri = self.storage_uri_for_key(key)
-                logging.debug('listed %r', logfile_uri)
+                logfile_uri = str(self.storage_uri_for_key(key))
+                logging.debug('found %r', logfile_uri)
                 logfile = logfile_uris.get(logfile_uri)
-                import pprint
-                logging.debug('checking in %s', pprint.pformat(sorted(logfile_uris.keys())))
-                if logfile:
+                if logfile is not None:
                     logging.debug('added to uploaded_set')
                     uploaded_set.add(logfile)
 

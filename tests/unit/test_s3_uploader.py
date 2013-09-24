@@ -408,7 +408,7 @@ class TestS3Uploader(unittest.TestCase):
     def test_check_uri_missing_bucket(self):
         upload_uri = 's3://nt8.logs.us-west-2/{prefix}/{year}/{month}/{day}/{filename}'
         uploader = self._make_uploader(upload_uri, {'nt8.logs.us-east-1': {}})
-        expected = 'Failed to find bucket for {}'.format(upload_uri)
+        expected = 'Failed to find bucket nt8.logs.us-west-2'
         actual = uploader.check_uri()
         self.assertEqual(expected, actual)
 
