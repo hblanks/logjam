@@ -6,7 +6,11 @@ except ImportError:
 
 setup(
     name='logjam',
+    description='Small tools for archiving ISO8601 logfiles',
     version='0.0.1',
+    author='Hunter Blanks',
+    author_email='hblanks@artifex.org',
+    url='https://github.com/hblanks/logjam',
     packages=['logjam',],
     license='MIT License',
     scripts=['scripts/logjam-compress', 'scripts/logjam-upload'],
