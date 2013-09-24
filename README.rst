@@ -5,8 +5,9 @@ Logjam
 Logjam handles the (relatively) simple problem of compressing and archiving
 ISO8601 logfiles. It works like this:
 
-    1. Write all your logs into hourly files with an ISO8601
-    2. Run **logjam-compress** and **logjam-upload** on your log directories
+    1. Write all your logs into hourly files with an ISO8601 in their filenames.
+    2. Run **logjam-compress** and **logjam-upload** on your log directories,
+       either via cron or as a daemon.
     3. Your completed logfiles will automatically be compressed and uploaded to S3.
 
 How to use it
@@ -68,7 +69,7 @@ Just boto, and a bucket in S3.
 Why is this useful?
 -------------------
 
-It's easy to think that you might not need this, because if you have any
+You may be right to think that don't need this, because if you have any
 significant amount of logs, you're going to want some sort of online log
 aggregation system, such as Logstash.
 
