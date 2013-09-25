@@ -6,19 +6,23 @@ except ImportError:
 
 setup(
     name='logjam',
-    description='Small tools for archiving ISO8601 logfiles',
-    version='0.0.1',
-    author='Hunter Blanks',
+    version='0.0.2',
+
+    # metadata
     author_email='hblanks@artifex.org',
-    url='https://github.com/hblanks/logjam',
-    packages=['logjam',],
+    author='Hunter Blanks',
+    description='Small tools for archiving ISO8601 logfiles',
     license='MIT License',
-    scripts=['scripts/logjam-compress', 'scripts/logjam-upload'],
     long_description=open('README.rst').read(),
-    test_suite='tests.unit',
+    url='https://github.com/hblanks/logjam',
+
+    # build instructions
     install_requires=[
         'boto>=2.2.2',
         ],
+    packages=['logjam',],
+    scripts=['scripts/logjam-compress', 'scripts/logjam-upload'],
+    test_suite='tests.unit',
     tests_require=[
         'boto>=2.2.2',
         ],
