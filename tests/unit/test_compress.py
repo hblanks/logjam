@@ -202,7 +202,7 @@ class TestCompress(unittest.TestCase):
 
                 # ... and check that compress_path() deleted the
                 # original file.
-                self.assertFalse(os.path.isfile(t.name)
+                self.assertFalse(os.path.isfile(t.name))
         finally:
             if t and os.path.isfile(t.name):
                 os.unlink(t.name)
@@ -229,7 +229,7 @@ class TestCompress(unittest.TestCase):
 
                 # ... and check that compress_path() did NOT delete the
                 # original file.
-                self.assertTrue(os.path.isfile(t.name)
+                self.assertTrue(os.path.isfile(t.name))
         finally:
             if rename_args[0] and os.path.isfile(rename_args[0]):
                 os.unlink(rename_args[0])
