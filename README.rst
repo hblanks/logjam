@@ -2,6 +2,14 @@
 Logjam
 ======
 
+logjam 0.0.3
+
+Released: 27-September-2013
+
+.. image:: https://travis-ci.org/hblanks/logjam.png?branch=master
+        :target: https://travis-ci.org/hblanks/logjam
+
+
 Logjam handles the (relatively) simple problem of compressing and archiving
 ISO8601 logfiles. It works like this:
 

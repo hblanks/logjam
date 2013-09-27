@@ -6,7 +6,7 @@ except ImportError:
 
 setup(
     name='logjam',
-    version='0.0.2',
+    version='0.0.3',
 
     # metadata
     author_email='hblanks@artifex.org',
