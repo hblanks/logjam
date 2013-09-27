@@ -105,6 +105,9 @@ def _connect_s3(os_environ=None, get_ec2_metadata=None, boto_connect_s3=None):
 
     s3_endpoint = _get_s3_endpoint(os_environ, get_ec2_metadata)
     try:
+        logging.debug('s3_uploader._connect_s3: connecting to %s',
+            s3_endpoint
+            )
         return boto_connect_s3(host=s3_endpoint)
     except boto.exception.NoAuthHandlerFound:
         tup = _get_iam_role(get_ec2_metadata)
@@ -112,6 +115,9 @@ def _connect_s3(os_environ=None, get_ec2_metadata=None, boto_connect_s3=None):
             raise Exception('No credentials found for connecting to S3')
 
         aws_access_key_id, aws_secret_access_key, security_token = tup
+        logging.debug('s3_uploader._connect_s3: connecting to %s with IAM role',
+            s3_endpoint
+            )
         return boto_connect_s3(
             aws_access_key_id,
             aws_secret_access_key,
