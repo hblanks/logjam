@@ -5,6 +5,7 @@ Uploader for uploading logs to S3.
 
 from __future__ import absolute_import
 
+import json
 import logging
 import os
 import socket
