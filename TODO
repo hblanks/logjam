@@ -1,1 +1,4 @@
 - set timeout for compression / upload
+- if a source logfile re-appears, don't replace its compressed
+  equivalent in archive/ -- either move it extend first part
+  of the suffix ( .gz -> .1.gz)
