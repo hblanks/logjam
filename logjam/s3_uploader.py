@@ -231,6 +231,11 @@ class S3Uploader(BaseUploader):
 
 
     def check_uri(self):
+        """
+        Attempts to connect to S3 using our upload_uri.
+
+        Returns a string if any error occurred.
+        """
         try:
             logfile_uri = get_logfile_uri(self.upload_uri, parse.SAMPLE_LOGFILE)
         except ValueError, e:
