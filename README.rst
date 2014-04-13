@@ -107,3 +107,14 @@ choose which to have first, I always choose persistence over
 aggregation. Unfortunately, I'm always writing code to take care of the
 persistence -- i.e. of compressing and uploading logfiles. So, finally,
 here's a small, open source tool for it.
+
+Running tests
+-------------
+
+Unit tests run with::
+
+    python setup.py test
+
+Integration tests run with:
+
+    python tests/integration/test_all.py
