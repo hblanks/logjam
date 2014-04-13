@@ -1,8 +1,6 @@
 #!python
 
-import sys
-
 import logjam.upload
 
 if __name__ == '__main__':
-    logjam.upload.main(sys.argv)
+    logjam.upload.main()

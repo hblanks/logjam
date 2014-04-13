@@ -213,9 +213,9 @@ def make_parser():
     return parser
 
 
-def main(argv):
+def main():
     parser = make_parser()
-    args = parser.parse_args(argv[1:])
+    args = parser.parse_args()
 
     compress_cmd_args = ('gzip', '-c')
     compress_extension = '.gz'
@@ -223,10 +223,16 @@ def main(argv):
     service.configure_logging(args.log_level)
 
     if args.once:
-        scan_and_compress(args.log_dir, compress_cmd_args, compress_extension)
+        service.do_once(
+            scan_and_compress,
+            args.log_dir, compress_cmd_args, compress_extension
+            )
     else:
         service.do_forever(
             scan_and_compress,
             service.DEFAULT_INTERVAL,
             args.log_dir, compress_cmd_args, compress_extension
             )
+
+if __name__ == '__main__':
+    main()

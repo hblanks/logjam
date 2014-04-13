@@ -3,9 +3,10 @@
 import logging
 import time
 
-MIN_SLEEP_TIME = 1
 
+MIN_SLEEP_TIME = 1
 DEFAULT_INTERVAL = 60
+
 
 def configure_logging(log_level):
     """
@@ -16,10 +17,27 @@ def configure_logging(log_level):
     logging.basicConfig(level=getattr(logging, log_level.upper()))
 
 
+
+def do_once(do_func, *args, **kwargs):
+    """
+    Calls do_func(*args, **kwargs).
+
+    This function will attempt to report exceptions using the
+    sentry client library, raven, if it is available for import
+    and if SENTRY_DSN is set in the environment.
+    """
+    with sentry_context({'logjam.service': do_func.__name__}):
+        do_func(*args, **kwargs)
+
+
 def do_forever(do_func, interval_secs, *args, **kwargs):
     """
     Calls do_func(*args, **kwargs) every interval_secs, accounting
     for time elapsed while the function is running.
+
+    This function will attempt to report exceptions using the
+    sentry client library, raven, if it is available for import
+    and if SENTRY_DSN is set in the environment.
 
     In addition, this function will sleep a minimum of MIN_SLEEP_SECS
     between calls of do_func(), so that this service (which is always

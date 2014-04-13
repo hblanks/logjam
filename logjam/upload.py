@@ -68,15 +68,20 @@ def get_uploader(upload_uri, uploaders=UPLOADERS):
 #
 
 def scan_and_upload_filenames(log_archive_dir, filenames, uploader):
-    logfiles = filter(None, map(parse.parse_filename, filenames))
+    """
+    Args:
 
+        - log_archive_dir: path to a directory of archived logfiles
+        - filenames: filenames to (possibly) upload within this dir
+        - uploader: Uploader instance
+
+Returns:
+
+        - set of LogFiles that are have been uploaded (now, or earlier)
+        - set of LogFiles that have not yet been uploaded
+    """
+    logfiles = filter(None, map(parse.parse_filename, filenames))
     uploaded, not_uploaded = uploader.scan_remote(logfiles)
-    # logging.debug('scan_and_upload: uploaded %r',
-    #     [l.filename for l in sorted(uploaded)]
-    #     )
-    # logging.debug('scan_and_upload: not_uploaded %r',
-    #     [l.filename for l in sorted(not_uploaded)]
-    #     )
 
     # Make a fresh, sorted list as we'll be mutating it.
     for logfile in sorted(not_uploaded):
