@@ -26,6 +26,8 @@ def temporary_directory():
             shutil.rmtree(tempdir)
 
 
+def logfile_contents(filename):
+    return 'logfile {}!\n'.format(filename)
 
 def write_logfiles(temp_dir):
     utcnow = datetime.datetime.utcnow()
@@ -44,7 +46,7 @@ def write_logfiles(temp_dir):
 
     for filename in filenames:
         with open(os.path.join(temp_dir, filename), 'w') as f:
-            f.write('logfile {}!\n'.format(filename))
+            f.write(logfile_contents(filename))
 
     return sorted(filenames)
 
@@ -63,7 +65,8 @@ class TestLogjamCompress(unittest.TestCase):
                 ]
             archive_dir = os.path.join(tempdir, 'archive')
 
-            subprocess.check_call(['scripts/logjam-compress', '--once', tempdir])
+            subprocess.check_call(
+                ['python', '-m', 'logjam.compress', '--once', tempdir])
             actual = os.listdir(archive_dir)
             self.assertEqual(expected, actual)
 
@@ -88,7 +91,8 @@ class TestLogjamCompress(unittest.TestCase):
 
             archive_dir = os.path.join(tempdir, 'archive')
             start = time.time()
-            p = subprocess.Popen(['scripts/logjam-compress', tempdir])
+            p = subprocess.Popen(
+                ['python', '-m', 'logjam.compress', tempdir])
 
             # Wait until all files are compressed, or max time is elapsed
             while time.time() - start < MAX_TIME:
