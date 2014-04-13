@@ -67,7 +67,7 @@ class TestLogjamCompress(unittest.TestCase):
 
             subprocess.check_call(
                 ['python', '-m', 'logjam.compress', '--once', tempdir])
-            actual = os.listdir(archive_dir)
+            actual = sorted(os.listdir(archive_dir))
             self.assertEqual(expected, actual)
 
             # check logfile contents
@@ -97,7 +97,7 @@ class TestLogjamCompress(unittest.TestCase):
             # Wait until all files are compressed, or max time is elapsed
             while time.time() - start < MAX_TIME:
                 if os.path.isdir(archive_dir):
-                    actual = os.listdir(archive_dir)
+                    actual = sorted(os.listdir(archive_dir))
                 else:
                     actual = None
                 if expected == actual:
@@ -132,4 +132,46 @@ class TestLogjamCompress(unittest.TestCase):
             for n, p in ((n, os.path.join(archive_dir, n)) for n in actual):
                 with gzip.GzipFile(p, 'r') as f:
                     expected = 'logfile {}!\n'.format(n[:-3])
+                    self.assertEqual(expected, f.read())
+
+
+    def test_run_logjam_compress_no_overwrite_existing_file(self):
+        with temporary_directory() as tempdir:
+            filenames = write_logfiles(tempdir)
+            expected = [
+                fn.filename + '.gz' for fn in
+                logjam.compress.yield_old_logfiles(
+                    filenames,
+                    datetime.datetime.utcnow()
+                    )
+                ]
+
+            existing_logname = expected[0]
+            duplicate_logname = logjam.compress.duplicate_timestamp_path(
+                existing_logname
+            )
+            expected.append(duplicate_logname)
+            expected.sort()
+
+            archive_dir = os.path.join(tempdir, 'archive')
+            os.mkdir(archive_dir)
+            existing_gz_path = os.path.join(archive_dir, existing_logname)
+            with gzip.GzipFile(existing_gz_path, 'w') as f:
+                f.write(logfile_contents('EXISTING_LOGFILE'))
+
+            subprocess.check_call(
+                ['python', '-m', 'logjam.compress', '--once', tempdir])
+            actual = sorted(os.listdir(archive_dir))
+            self.assertEqual(expected, actual)
+
+            # check logfile contents
+            for name in actual:
+                path = os.path.join(archive_dir, name)
+                with gzip.GzipFile(path, 'r') as f:
+                    if name == existing_logname:
+                        expected = logfile_contents('EXISTING_LOGFILE')
+                    elif name == duplicate_logname:
+                        expected = logfile_contents(existing_logname[:-3])
+                    else:
+                        expected = logfile_contents(name[:-3])
                     self.assertEqual(expected, f.read())

@@ -79,6 +79,14 @@ def parse_filename(filename):
         filename
         )
 
+def unparse_filename(prefix, timestamp, suffix, extension):
+    if suffix:
+        suffix = '-' + suffix
+    else:
+        suffix = ''
+    return '%s-%s%s%s' % (
+        prefix, timestamp.strftime('%Y%m%dT%H%MZ'), suffix, extension)
+
 
 def group_filenames(filenames):
     """

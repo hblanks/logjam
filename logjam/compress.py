@@ -34,12 +34,20 @@ ONE_HOUR_PLUS = datetime.timedelta(hours=1, minutes=5)
 #
 
 def select_superseded_by_new_file(logfiles):
+    """
+    Takes a list of LogFiles of the same prefix. Returns those files
+    that are superseded by one with a newer timestamp.
+    """
     if len(logfiles) > 1:
         return sorted(logfiles, key=parse.logfile_keyfunc)[:-1]
     return []
 
 
 def select_superseded_by_timestamp(logfiles, current_timestamp):
+    """
+    Takes a list of LogFiles of the same prefix, and a DateTime. Returns
+    those files that are ONE_HOUR_PLUS older than the given DateTime.
+    """
     return [
         lf for lf in logfiles
         if current_timestamp - lf.timestamp > ONE_HOUR_PLUS
@@ -62,24 +70,33 @@ def yield_old_logfiles(filenames, current_timestamp):
             yield logfile
 
 
-# @contextlib.contextmanager
-# def open_excl(path, mode):
-#     """
-#     Implements an open() that only works if the specified file
-#     does not yet exist.
-#     """
-#     fd = f = None
-#     try:
-#         fd = os.open(path, os.O_EXCL|os.O_CREAT|os.O_WRONLY)
-#         print fd
-#         f = os.fdopen(fd, mode)
-#         yield f
-#     finally:
-#         if f:
-#             f.close()
-#         elif fd:
-#             os.close(fd)
-#
+def duplicate_timestamp_path(existing_path):
+    """
+    Takes the path to a logfile.
+    """
+    logfile = parse.parse_filename(existing_path)
+    index = 0
+    while index < 25:
+        if index == 0:
+            suffix = ''
+        else:
+            suffix = '-%02d' % index
+
+        new_path = parse.unparse_filename(
+            logfile.prefix + '-logjam-compress-duplicate-timestamp',
+            logfile.timestamp,
+            logfile.suffix,
+            logfile.extension
+        )
+        if not os.path.exists(new_path):
+            return new_path
+
+        index += 1
+
+    raise Exception(
+        'More than %d duplicate timestamp paths detected.' %
+        index + 1
+        )
 
 
 def compress_path(
@@ -103,6 +120,27 @@ def compress_path(
                     ' '.join(compress_cmd_args), retcode
                     )
                 return
+
+        if os.path.exists(dst_path):
+            # This is a difficult position: the compressed file already
+            # exists, but we have a new, uncompressed file that must
+            # be dealt with.
+            #
+            # Although not perfect, the course below (make a special
+            # logfile name for it) makes sure that the file is archived
+            # and (eventually) uploaded into its own folder for later
+            # reconciliation by the operator.
+            logging.error(
+                'compress.compress_path: compress %s failed. %s already exists!',
+                path, dst_path
+                )
+            orig_dst_path = dst_path
+            dst_path = duplicate_timestamp_path(dst_path)
+
+            if os.path.exists(dst_path):
+                raise RuntimeError(
+                    'Unable to recover from pre-existing logfile %s' %
+                    orig_dst_path)
 
         os_rename(f.name, dst_path)
 
@@ -140,6 +178,8 @@ def scan_and_compress(log_dir, compress_cmd_args, compress_extension):
             compress_extension,
             archive_dir,
             )
+        if compressed_path is None:
+            pass
 
 
 

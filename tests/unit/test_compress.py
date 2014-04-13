@@ -1,14 +1,27 @@
 """ tests for logjam.compress """
 
-import tempfile
+import contextlib
 import datetime
 import os
+import os.path
+import shutil
+import tempfile
 import unittest
 
-
 from logjam.parse import LogFile
-import logjam.parse
 import logjam.compress
+import logjam.parse
+
+
+@contextlib.contextmanager
+def temporary_directory():
+    tempdir = None
+    try:
+        tempdir = tempfile.mkdtemp()
+        yield tempdir
+    finally:
+        if tempdir and os.path.isdir(tempdir):
+            shutil.rmtree(tempdir)
 
 
 class TestCompress(unittest.TestCase):
@@ -140,35 +153,6 @@ class TestCompress(unittest.TestCase):
         self.assertEqual(expected, actual)
 
 
-
-    #
-    # test_open_excl_* --- not used
-    #
-
-    #     def test_open_excl_success(self):
-    #         t = None
-    #         try:
-    #             with tempfile.NamedTemporaryFile() as t:
-    #                 pass
-    #             with logjam.compress.open_excl(t.name, 'w') as f:
-    #                 f.write('foo')
-    #         finally:
-    #             if t and os.path.isfile(t.name):
-    #                 os.unlink(t.name)
-    #
-    #
-    #     def test_open_excl_fail(self):
-    #         with self.assertRaisesRegexp(OSError, 'File exists: .+'):
-    #             t = None
-    #             try:
-    #                 with tempfile.NamedTemporaryFile(delete=False) as t:
-    #                     pass
-    #                 with logjam.compress.open_excl(t.name, 'wb'):
-    #                     t.write('foo')
-    #             finally:
-    #                 if t and os.path.isfile(t.name):
-    #                     os.unlink(t.name)
-
     #
     # test_compress_path*
     #
@@ -181,55 +165,92 @@ class TestCompress(unittest.TestCase):
         return os_rename, rename_args
 
     def test_compress_path_cmd_success(self):
-        t = expected = None
         os_rename, rename_args = self._make_os_rename()
-        try:
-            with tempfile.NamedTemporaryFile(delete=False) as t:
-                archive_dir = os.path.join(os.path.dirname(t.name), 'archive')
-                expected = os.path.join(
-                    archive_dir,
-                    os.path.basename(t.name) + '.gz'
-                    )
-                actual = logjam.compress.compress_path(
-                    t.name,
-                    ('true',),
-                    '.gz',
-                    archive_dir,
-                    os_rename=os_rename
-                    )
-                self.assertEqual(expected, actual)
-                self.assertEqual([expected], rename_args[1:])
+        with temporary_directory() as temp_dir:
+            log_path = os.path.join(temp_dir, 'compress-test.log')
+            with open(log_path, 'w') as f:
+                f.write('compress-test')
 
-                # ... and check that compress_path() deleted the
-                # original file.
-                self.assertFalse(os.path.isfile(t.name))
-        finally:
-            if t and os.path.isfile(t.name):
-                os.unlink(t.name)
-            if expected and os.path.isfile(expected):
-                os.unlink(expected)
+            archive_dir = os.path.join(temp_dir, 'archive')
+            expected = os.path.join(
+                archive_dir,
+                os.path.basename(log_path) + '.gz'
+                )
+            actual = logjam.compress.compress_path(
+                log_path,
+                ('true',),
+                '.gz',
+                archive_dir,
+                os_rename=os_rename
+                )
+            self.assertEqual(expected, actual)
+            self.assertEqual([expected], rename_args[1:])
+
+            # ... and check that compress_path() deleted the
+            # original file.
+            self.assertFalse(os.path.isfile(log_path))
 
 
     def test_compress_path_cmd_fail(self):
-        t = not_expected = None
         os_rename, rename_args = self._make_os_rename()
-        try:
-            with tempfile.NamedTemporaryFile() as t:
-                archive_dir = os.path.join(os.path.dirname(t.name), 'archive')
-                expected = None
-                actual = logjam.compress.compress_path(
-                    t.name,
-                    ('false',),
-                    '.gz',
-                    archive_dir,
-                    os_rename=os_rename
-                    )
-                self.assertEqual(expected, actual)
-                self.assertEqual([None], rename_args)
+        with temporary_directory() as temp_dir:
+            log_path = os.path.join(temp_dir, 'compress-test.log')
+            with open(log_path, 'w') as f:
+                f.write('compress-test')
 
-                # ... and check that compress_path() did NOT delete the
-                # original file.
-                self.assertTrue(os.path.isfile(t.name))
-        finally:
-            if rename_args[0] and os.path.isfile(rename_args[0]):
-                os.unlink(rename_args[0])
+            archive_dir = os.path.join(temp_dir, 'archive')
+            expected = None
+            actual = logjam.compress.compress_path(
+                log_path,
+                ('false',),
+                '.gz',
+                archive_dir,
+                os_rename=os_rename
+                )
+
+            self.assertEqual(expected, actual)
+            self.assertEqual([None], rename_args)
+
+            # ... and check that compress_path() did NOT delete the
+            # original file.
+            self.assertTrue(os.path.isfile(log_path))
+
+    def test_compress_path_preexisting_dst_path(self):
+        os_rename, rename_args = self._make_os_rename()
+        with temporary_directory() as temp_dir:
+            fname = 'compress-test-20140411T0000Z.log'
+            log_path = os.path.join(temp_dir, fname)
+            with open(log_path, 'w') as f:
+                f.write('compress-test')
+
+            archive_dir = os.path.join(temp_dir, 'archive')
+            os.mkdir(archive_dir)
+            existing_path = os.path.join(archive_dir, fname + '.gz')
+            with open(existing_path, 'w') as f:
+                f.write('compress-test')
+
+            expected = os.path.join(
+                archive_dir,
+                'compress-test-logjam-compress-duplicate-timestamp-20140411T0000Z.log.gz'
+            )
+            actual = logjam.compress.compress_path(
+                log_path,
+                ('true',),
+                '.gz',
+                archive_dir,
+                os_rename=os_rename
+            )
+            self.assertEqual(expected, actual)
+
+            # check that compress_path() would have moved the compressed
+            # file into place
+            self.assertEqual([expected], rename_args[1:])
+
+            # check that compress_path() did not change the preexisting
+            # compressed file
+            self.assertTrue(os.path.isfile(existing_path))
+            with open(existing_path, 'r') as f:
+                self.assertEqual('compress-test', f.read())
+
+            # check that compress_path() deleted the source log file.
+            self.assertFalse(os.path.isfile(log_path))

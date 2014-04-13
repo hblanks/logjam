@@ -68,6 +68,21 @@ class TestParse(unittest.TestCase):
 
 
     #
+    # test_unparse_filename_*
+    #
+
+    def test_unparse_filename(self):
+        expected = logjam.parse.SAMPLE_LOGFILE.filename
+        actual = logjam.parse.unparse_filename(
+            logjam.parse.SAMPLE_LOGFILE.prefix,
+            logjam.parse.SAMPLE_LOGFILE.timestamp,
+            logjam.parse.SAMPLE_LOGFILE.suffix,
+            logjam.parse.SAMPLE_LOGFILE.extension
+            )
+        self.assertEqual(expected, actual)
+
+
+    #
     # test_group_filenames_*
     #
 
