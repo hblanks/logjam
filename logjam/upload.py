@@ -100,35 +100,73 @@ Returns:
     return uploaded, not_uploaded
 
 
-def scan_and_upload(log_archive_dir, log_upload_uri, persist_hours=None):
-    """
-    Takes a directory of archived logfiles, an upload URI, and an
-    optional number of how many hours of old logfiles to keep.
+class UploadService(object):
 
-    Scans the directory of archived logfiles and compares it with those
-    at the upload URI. Uploads files that are not present, and then
-    prunes logfiles that are more than persist_hours hours old.
-    """
+    # Maximum size of this set: 400000 * 48 bytes per name ~= 18MB
+    # 400000 hourly logfiles ~= 20 log prefixes * 24 hours * 833 days
+    MAX_UPLOADED_FILENAMES = 400000
 
-    filenames = os.listdir(log_archive_dir)
-    uploader = get_uploader(log_upload_uri)
+    def __init__(self, log_archive_dir, log_upload_uri, ):
+        """
+        Args:
 
-    uploader.connect()
-    error = uploader.check_uri()
-    if error:
-        logging.error('Invalid upload_uri %s: %s', log_upload_uri, error)
-        print >> sys.stderr, 'Invalid upload_uri %s: %s' % (
-            log_upload_uri, error
+            - log_archive_dir: path to a directory of archived logfiles,
+            - log_upload_uri: an upload URI,
+
+        """
+
+        self.log_archive_dir = log_archive_dir
+        self.log_upload_uri = log_upload_uri
+        self.uploaded_filenames = set()
+
+
+    def update_uploaded_filenames(self, uploaded_logfiles):
+        """
+        Updates self.uploaded_filenames, checking to make sure that we
+        don't exceed our maximum set size.
+
+        Args:
+
+            - uploaded_logfiles: set of LogFiles that have been uploaded
+
+        """
+        if len(self.uploaded_filenames) > self.MAX_UPLOADED_FILENAMES:
+            self.uploaded_logfiles = set()
+            # raise RuntimeError(
+            #     'Number of uploaded files tracked exceeds %d' %
+            #     self.MAX_UPLOADED_FILENAMES
+            # )
+        for logfile in uploaded_logfiles:
+            self.uploaded_filenames.add(logfile.filename)
+
+
+    def run(self):
+        """
+        Scans the directory of archived logfiles and compares it with those
+        at the upload URI. Uploads files that are not present, and then
+        prunes logfiles that are more than persist_hours hours old.
+        """
+
+        uploader = get_uploader(self.log_upload_uri)
+        uploader.connect()
+        error = uploader.check_uri()
+        if error:
+            logging.error(
+                'Invalid upload_uri %s: %s', self.log_upload_uri, error
             )
-        sys.exit(1) # take the short way out
+            raise Exception('Invalid upload_uri %s: %s' % (
+                log_upload_uri, error
+            ))
 
-    uploaded, not_uploaded = scan_and_upload_filenames(
-        log_archive_dir, filenames, uploader
-        )
+        filenames = os.listdir(self.log_archive_dir)
+        filenames = set(filenames) - set(self.uploaded_filenames)
 
-    if persist_hours:
-        # TODO: prune old logfiles here using uploaded_set
-        raise NotImplementedError
+        uploaded, not_uploaded = scan_and_upload_filenames(
+            self.log_archive_dir, filenames, uploader
+            )
+
+        self.update_uploaded_filenames(uploaded)
+
 
 
 #
@@ -163,12 +201,18 @@ def make_parser():
         default='info',
         help='Log level to use for logjam\'s own logging',
         )
+    # parser.add_argument(
+    #     '--persist-days', '-h',
+    #     type=float,
+    #     default=30,
+    #     help='Number of days to keep uploaded logs before deleting them'
+    #     )
     return parser
 
 
-def main(argv):
+def main():
     parser = make_parser()
-    args = parser.parse_args(argv[1:])
+    args = parser.parse_args()
 
     if not os.path.basename(args.log_archive_dir) == 'archive':
         parser.error(
@@ -182,14 +226,16 @@ def main(argv):
     # Tune down boto logging
     logging.getLogger('boto').setLevel(logging.WARNING)
 
+    upload_service = UploadService(
+        args.log_archive_dir,
+        args.log_upload_uri
+    )
+
     if args.once:
-        scan_and_upload(
-            args.log_archive_dir,
-            args.log_upload_uri,
-            )
+        service.do_once(upload_service.run)
     else:
-        service.do_forever(
-            scan_and_upload,
-            service.DEFAULT_INTERVAL,
-            args.log_archive_dir, args.log_upload_uri
-            )
+        service.do_forever(upload_service.run, service.DEFAULT_INTERVAL)
+
+
+if __name__ == '__main__':
+    main()
