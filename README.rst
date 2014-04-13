@@ -117,4 +117,9 @@ Unit tests run with::
 
 Integration tests run with:
 
+    export SENTRY_DSN="https:// SOME SENTRY DSN"
     python tests/integration/test_all.py
+
+Or run them all with:
+
+    ./test_all.sh
