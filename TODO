@@ -1,4 +1,10 @@
 - set timeout for compression / upload
-- if a source logfile re-appears, don't replace its compressed
-  equivalent in archive/ -- either move it extend first part
-  of the suffix ( .gz -> .1.gz)
+
+- delete logfiles that have been uploaded after they're more than
+  X days (or hours?) old
+
+- provide examples for syslogng / rsyslog
+
+- provide rotating file log handler
+
+- documentation!

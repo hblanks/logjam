@@ -1,0 +1,21 @@
+
+
+master
+------
+
+* Fix ``logjam-compress`` so that if the compressed path for log
+  already exists, it won't replace the file. Instead, it compresses
+  the log file into a different path, which includes a prefix
+  denoting that this was the result of a pre-existing compressed
+  logfile.
+
+* Add optional exception reporting from sentry if $SENTRY_DSN is
+  provided in the environment and raven (the Sentry client) is
+  installed.
+
+
+
+0.0.3
+-----
+
+* First working release
