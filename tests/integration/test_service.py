@@ -10,6 +10,7 @@ import logjam.service
 
 @contextlib.contextmanager
 def environ_var(name, value):
+    """ Temporarily sets some environment variable name=value. """
     orig_value = os.environ.get(name)
     try:
         os.environ[name] = value
@@ -20,7 +21,7 @@ def environ_var(name, value):
         else:
             os.environ[name] = orig_value
 
-class TestLogjamServiceError:
+class TestLogjamServiceError(Exception):
     pass
 
 
