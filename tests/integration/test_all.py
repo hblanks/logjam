@@ -18,5 +18,12 @@ else:
 
 from test_compress import TestLogjamCompress
 
+try:
+    import raven
+    from test_service import TestLogjamService
+except ImportError:
+    print >> sys.stderr, (
+        'WARNING: sentry reporting will not be tested.\n')
+
 if __name__ == '__main__':
     unittest.main()
