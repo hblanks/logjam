@@ -192,7 +192,9 @@ class TestUpload(unittest.TestCase):
         with self._upload_service(filenames) as tup:
             tempdir, uploader, uploadService = tup
             uploadService.run()
-            marked = os.listdir(os.path.join(tempdir, '.uploaded'))
+            marked = sorted(
+                os.listdir(os.path.join(tempdir, '.uploaded'))
+            )
             assert filenames == marked
             assert set(filenames) == set(
                 u.filename for u in uploader.uploaded)
@@ -235,7 +237,9 @@ class TestUpload(unittest.TestCase):
             uploadService.run()
             filenames.extend(more_filenames)
 
-            marked = os.listdir(os.path.join(tempdir, '.uploaded'))
+            marked = sorted(
+                os.listdir(os.path.join(tempdir, '.uploaded'))
+            )
             assert filenames == marked
             assert set(filenames) == set(
                 u.filename for u in uploader.uploaded)
