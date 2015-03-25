@@ -1,7 +1,11 @@
 
 
-master
-------
+0.0.4-beta
+----------
+
+* Fix ``logjam-upload`` so that it keeps track of the files it's
+  uploaded. This considerably reduces the number of S3 GET requests
+  made to list objects in the target bucket.
 
 * Fix ``logjam-compress`` so that if the compressed path for log
   already exists, it won't replace the file. Instead, it compresses
