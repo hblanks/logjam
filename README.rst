@@ -2,11 +2,11 @@
 Logjam
 ======
 
-logjam 0.0.3
+logjam 0.0.4-beta
 
-Released: 27-September-2013
+Released: 24-March-2015
 
-.. image:: https://travis-ci.org/hblanks/logjam.png?branch=master
+.. image:: https://travis-ci.org/hblanks/logjam.png?branch=develop
         :target: https://travis-ci.org/hblanks/logjam
 
 
