@@ -154,6 +154,65 @@ class TestCompress(unittest.TestCase):
 
 
     #
+    # test_duplicate_timestamp_path
+    #
+
+    def test_duplicate_timestamp_path(self):
+        path = \
+            '/a/flask-requests-20130727T1200Z-us-west-2-i-ae23fega.log'
+        expected = (
+            '/a/flask-requests-'
+            'logjam-compress-duplicate-timestamp-'
+            '20130727T1200Z-us-west-2-i-ae23fega.log'
+        )
+        actual = logjam.compress.duplicate_timestamp_path(path)
+        self.assertEqual(expected, actual)
+
+    def test_duplicate_timestamp_path_duplicates_exists(self):
+        with temporary_directory() as temp_dir:
+            path = os.path.join(
+                temp_dir,
+                'flask-requests-20130727T1200Z-us-west-2-i-ae23fega.log'
+            )
+            dup_path = logjam.compress.duplicate_timestamp_path(path)
+            with open(dup_path, 'w'):
+                pass
+
+            expected = dup_path.replace(
+                'logjam-compress-duplicate-timestamp-',
+                'logjam-compress-duplicate-timestamp-01-'
+            )
+            actual = logjam.compress.duplicate_timestamp_path(path)
+            self.assertEqual(expected, actual)
+
+            for i in range(1, 24):
+                next_path = dup_path.replace(
+                    'logjam-compress-duplicate-timestamp-',
+                    'logjam-compress-duplicate-timestamp-%02d-' % i
+                )
+                with open(next_path, 'w'):
+                    pass
+
+            expected = dup_path.replace(
+                'logjam-compress-duplicate-timestamp-',
+                'logjam-compress-duplicate-timestamp-24-'
+            )
+            actual = logjam.compress.duplicate_timestamp_path(path)
+            self.assertEqual(expected, actual)
+
+            next_path = dup_path.replace(
+                'logjam-compress-duplicate-timestamp-',
+                'logjam-compress-duplicate-timestamp-24-'
+            )
+            with open(next_path, 'w'):
+                pass
+
+            expected_pat = '^25 duplicate timestamp paths detected.$'
+            with self.assertRaisesRegexp(Exception, expected_pat):
+                logjam.compress.duplicate_timestamp_path(path)
+
+
+    #
     # test_compress_path*
     #
 

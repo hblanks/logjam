@@ -83,7 +83,11 @@ def duplicate_timestamp_path(existing_path):
             suffix = '-%02d' % index
 
         new_path = parse.unparse_filename(
-            logfile.prefix + '-logjam-compress-duplicate-timestamp',
+            (
+                logfile.prefix +
+                '-logjam-compress-duplicate-timestamp' +
+                suffix
+            ),
             logfile.timestamp,
             logfile.suffix,
             logfile.extension
@@ -93,10 +97,7 @@ def duplicate_timestamp_path(existing_path):
 
         index += 1
 
-    raise Exception(
-        'More than %d duplicate timestamp paths detected.' %
-        index + 1
-        )
+    raise Exception('%d duplicate timestamp paths detected.' % index)
 
 
 def compress_path(path, compress_cmd_args, compress_extension,

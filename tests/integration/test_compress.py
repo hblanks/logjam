@@ -150,6 +150,8 @@ class TestLogjamCompress(unittest.TestCase):
             duplicate_logname = logjam.compress.duplicate_timestamp_path(
                 existing_logname
             )
+            assert existing_logname != duplicate_logname
+
             expected.append(duplicate_logname)
             expected.sort()
 
