@@ -12,16 +12,16 @@ import re
 #
 
 HOUR_MINUTE_PAT = re.compile(
-    r'(.+)-' # prefix
-    r'(\d{4})-?(\d\d)-?(\d\d)T(\d\d):?(\d\d)Z' # year, mo, day, min, hour
-    r'(-[^.]+)?' # suffix, plus leading -
-    r'(\..+)' # extension
-    )
+    r'(.+)-'  # prefix
+    r'(\d{4})-?(\d\d)-?(\d\d)T(\d\d):?(\d\d)Z'  # yr, mo, day, min, hr
+    r'(-[^.]+)?'  # suffix, plus leading -
+    r'(\..+)'  # extension
+)
 
 LogFile = collections.namedtuple(
     'LogFile',
     ('prefix', 'timestamp', 'suffix', 'extension', 'filename')
-    )
+)
 
 SAMPLE_LOGFILE = LogFile(
     'haproxy',
@@ -29,7 +29,7 @@ SAMPLE_LOGFILE = LogFile(
     'i-3949aea',
     '.log',
     'haproxy-20130727T1300Z-i-3949aea.log'
-    )
+)
 
 #
 # Functions
@@ -39,8 +39,9 @@ SAMPLE_LOGFILE = LogFile(
 def logfile_keyfunc(logfile):
     """ key function for use when sorting logfiles. """
     return (
-        logfile.prefix, logfile.timestamp, logfile.suffix, logfile.extension
-        )
+        logfile.prefix, logfile.timestamp, logfile.suffix,
+        logfile.extension
+    )
 
 
 def parse_filename(filename):
@@ -60,13 +61,15 @@ def parse_filename(filename):
         logging.debug('parse.parse_filename: no match for %s', filename)
         return
 
-    prefix, year, mo, day, minute, hour, suffix, extension = match.groups()
+    prefix, year, mo, day, minute, hour, suffix, extension = \
+        match.groups()
 
     if suffix:
         suffix = suffix[1:]
 
     try:
-        timestamp = datetime.datetime(*map(int, (year, mo, day, minute, hour)))
+        timestamp = datetime.datetime(
+            *map(int, (year, mo, day, minute, hour)))
     except ValueError:
         return
 
@@ -77,10 +80,12 @@ def parse_filename(filename):
         suffix,
         extension,
         filename
-        )
+    )
+
 
 def unparse_filename(prefix, timestamp, suffix, extension):
     if suffix:
+        # noinspection PyAugmentAssignment
         suffix = '-' + suffix
     else:
         suffix = ''

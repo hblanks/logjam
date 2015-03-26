@@ -6,26 +6,25 @@ import argparse
 import logging
 import os
 import os.path
-import sys
 import urlparse
 
 from . import parse
 from . import service
 
 
-COMMAND_DESCRIPTION = \
-"""Takes an archive/ directory of compressed ISO8601 logfiles and a URL
-to upload them to. Uploads the files to that URL.
+COMMAND_DESCRIPTION = """
+Takes an archive/ directory of compressed ISO8601 logfiles and a
+URL to upload them to. Uploads the files to that URL.
 
 Sample usage:
 
     logjam-upload /var/log/hourly/archive/ \
-	s3://my-log-bucket/{prefix}/{year}/{month}/{day}/{filename}
+    s3://my-log-bucket/{prefix}/{year}/{month}/{day}/{filename}
 
-Eventually, this tool should also allow operators to automatically delete
-older logfiles that have already been uploaded.
+Eventually, this tool should also allow operators to automatically
+delete older logfiles that have already been uploaded.
 
-"""
+"""[1:]
 
 
 #
@@ -33,12 +32,12 @@ older logfiles that have already been uploaded.
 #
 
 def boto_exists():
-	try:
-		import boto
-	except ImportError:
-		return False
-	return True
-
+    try:
+        # noinspection PyUnresolvedReferences
+        import boto
+    except ImportError:
+        return False
+    return True
 
 
 #
@@ -48,10 +47,14 @@ def boto_exists():
 UPLOADERS = {}
 
 if boto_exists():
-	from . import s3_uploader
-	UPLOADERS['s3'] = s3_uploader.S3Uploader
+    from . import s3_uploader
+
+    UPLOADERS['s3'] = s3_uploader.S3Uploader
 else:
-	logging.info('upload: failed to import boto. S3Uploader will not be available')
+    logging.info(
+        'upload: failed to import boto. '
+        'S3Uploader will not be available'
+    )
 
 
 def get_uploader(upload_uri, uploaders=UPLOADERS):
@@ -59,7 +62,7 @@ def get_uploader(upload_uri, uploaders=UPLOADERS):
     if u.scheme not in uploaders:
         raise Exception(
             'No uploader found for URI scheme {}'.format(u.scheme)
-            )
+        )
     return uploaders[u.scheme](upload_uri)
 
 
@@ -89,13 +92,12 @@ def scan_and_upload_filenames(log_archive_dir, filenames, uploader):
     for logfile in sorted(not_uploaded):
         error = uploader.upload_logfile(log_archive_dir, logfile)
         if error:
-            logging.warning('scan_and_upload: failed to upload %s',
-                logfile.filename
-                )
+            logging.warning(
+                'scan_and_upload: failed to upload %s', logfile.filename
+            )
         else:
-            logging.info('scan_and_upload: uploaded %s',
-                logfile.filename
-                )
+            logging.info(
+                'scan_and_upload: uploaded %s', logfile.filename)
             not_uploaded.remove(logfile)
             uploaded.add(logfile)
 
@@ -103,7 +105,6 @@ def scan_and_upload_filenames(log_archive_dir, filenames, uploader):
 
 
 class UploadService(object):
-
     def __init__(self, log_archive_dir, log_upload_uri, uploader=None):
         """
         Args:
@@ -121,7 +122,6 @@ class UploadService(object):
         self.log_upload_uri = log_upload_uri
         self.uploader = uploader
 
-
     def mark_uploaded_filenames(self, uploaded_logfiles):
         """Marks a list of logfiles as having been uploaded.
 
@@ -132,15 +132,14 @@ class UploadService(object):
         for logfile in uploaded_logfiles:
             marker_path = os.path.join(
                 self.log_archive_uploaded_dir, logfile)
-            with open(marker_path, 'w') as f:
+            with open(marker_path, 'w'):
                 pass
-
 
     def run(self):
         """
-        Scans the directory of archived logfiles and compares it with those
-        at the upload URI. Uploads files that are not present, and then
-        prunes logfiles that are more than persist_hours hours old.
+        Scans the directory of archived logfiles and compares it with
+        those at the upload URI. Uploads files that are not present, and
+        then prunes logfiles that are more than persist_hours hours old.
         """
 
         uploader = self.uploader or get_uploader(self.log_upload_uri)
@@ -151,7 +150,7 @@ class UploadService(object):
                 'Invalid upload_uri %s: %s', self.log_upload_uri, error
             )
             raise Exception('Invalid upload_uri %s: %s' % (
-                log_upload_uri, error
+                self.log_upload_uri, error
             ))
 
         filenames = os.listdir(self.log_archive_dir)
@@ -161,9 +160,8 @@ class UploadService(object):
 
         uploaded, not_uploaded = scan_and_upload_filenames(
             self.log_archive_dir, filenames, uploader
-            )
+        )
         self.mark_uploaded_filenames(lf.filename for lf in uploaded)
-
 
 
 #
@@ -175,35 +173,35 @@ def make_parser():
     parser = argparse.ArgumentParser(
         description=COMMAND_DESCRIPTION,
         formatter_class=argparse.RawDescriptionHelpFormatter
-        )
+    )
     parser.add_argument(
         'log_archive_dir',
-        help='Directory in which to scan for, and compress, hourly log files',
-        )
+        help=(
+            'Directory in which to scan for, and compress, hourly log '
+            'files'
+        ),
+    )
     parser.add_argument(
         'log_upload_uri',
-        help='Upload URI. Must contain {prefix}, {year}, {month}, {day}, and {filename}.'
+        help=(
+            'Upload URI. Must contain {prefix}, {year}, {month}, '
+            '{day}, and {filename}.'
         )
+    )
     parser.add_argument(
         '--once',
         action='store_true',
         help=(
-            'Scan and compress directory once, then exit, instead of running'
-            'continuously.'
-            )
+            'Scan and compress directory once, then exit, instead of '
+            'running continuously.'
         )
+    )
     parser.add_argument(
         '--log-level', '-l',
         choices=('debug', 'info', 'warning', 'error', 'critical'),
         default='info',
         help='Log level to use for logjam\'s own logging',
-        )
-    # parser.add_argument(
-    #     '--persist-days', '-h',
-    #     type=float,
-    #     default=30,
-    #     help='Number of days to keep uploaded logs before deleting them'
-    #     )
+    )
     return parser
 
 
@@ -215,8 +213,8 @@ def main():
         parser.error(
             'log_archive_dir {!r} does not end in "/archive'.format(
                 args.log_archive_dir
-                )
             )
+        )
 
     service.configure_logging(args.log_level)
 

@@ -2,7 +2,6 @@
 Uploader for uploading logs to S3.
 """
 
-
 from __future__ import absolute_import
 
 import json
@@ -17,6 +16,7 @@ import boto
 import boto.s3
 import boto.s3.key
 import boto.exception
+import boto.utils
 
 from .base_uploader import BaseUploader
 from . import parse
@@ -27,6 +27,7 @@ from . import parse
 
 EC2_METADATA_TIMEOUT = 0.2
 
+
 def _get_ec2_metadata(timeout=EC2_METADATA_TIMEOUT):
     """
     Wraps boto.utils.get_instance_metadata(), fetching local EC2
@@ -34,9 +35,9 @@ def _get_ec2_metadata(timeout=EC2_METADATA_TIMEOUT):
     Returns a dict if available, else None.
     """
 
-    # earlier versions of boto (including 2.2.2, which ships with Ubuntu 12.04
-    # LTS) don't allow a timeout when looking up EC2 instance metadata, so
-    # we check ourselves.
+    # earlier versions of boto (including 2.2.2, which ships with
+    # Ubuntu 12.04 LTS) don't allow a timeout when looking up EC2
+    # instance metadata, so we check ourselves.
     try:
         c = socket.create_connection(('169.254.169.254', 80), timeout)
         c.close()
@@ -59,13 +60,12 @@ def _get_iam_role(get_ec2_metadata):
     creds = ec2_metadata['iam']['security-credentials'].values()
     if len(creds) == 0:
         return
-    cred = creds[0] # blindly take the first cred we find...
+    cred = creds[0]  # blindly take the first cred we find...
     if isinstance(cred, list):
-        # earlier versions of boto (including 2.2.2) don't parse the cred
-        # but return a list of JSON fragments.
+        # earlier versions of boto (including 2.2.2) don't parse the
+        # cred but return a list of JSON fragments.
         cred = json.loads(''.join(cred))
     return cred['AccessKeyId'], cred['SecretAccessKey'], cred['Token']
-
 
 
 def _get_s3_endpoint(os_environ, get_ec2_metadata):
@@ -80,14 +80,16 @@ def _get_s3_endpoint(os_environ, get_ec2_metadata):
     else:
         ec2_metadata = get_ec2_metadata()
         if ec2_metadata is not None:
-            region_name = ec2_metadata['placement']['availability-zone'][:-1]
+            region_name = \
+                ec2_metadata['placement']['availability-zone'][:-1]
 
     if region_name is None:
         return 's3.amazonaws.com'
     return 's3-{}.amazonaws.com'.format(region_name)
 
 
-def _connect_s3(os_environ=None, get_ec2_metadata=None, boto_connect_s3=None):
+def _connect_s3(os_environ=None, get_ec2_metadata=None,
+                boto_connect_s3=None):
     """
     Returns a boto S3Connection to the appropriate region, using
     either credentials in the standard environment variable or else, if
@@ -105,9 +107,8 @@ def _connect_s3(os_environ=None, get_ec2_metadata=None, boto_connect_s3=None):
 
     s3_endpoint = _get_s3_endpoint(os_environ, get_ec2_metadata)
     try:
-        logging.debug('s3_uploader._connect_s3: connecting to %s',
-            s3_endpoint
-            )
+        logging.debug(
+            's3_uploader._connect_s3: connecting to %s', s3_endpoint)
         return boto_connect_s3(host=s3_endpoint)
     except boto.exception.NoAuthHandlerFound:
         tup = _get_iam_role(get_ec2_metadata)
@@ -115,15 +116,16 @@ def _connect_s3(os_environ=None, get_ec2_metadata=None, boto_connect_s3=None):
             raise Exception('No credentials found for connecting to S3')
 
         aws_access_key_id, aws_secret_access_key, security_token = tup
-        logging.debug('s3_uploader._connect_s3: connecting to %s with IAM role',
+        logging.debug(
+            's3_uploader._connect_s3: connecting to %s with IAM role',
             s3_endpoint
-            )
+        )
         return boto_connect_s3(
             aws_access_key_id,
             aws_secret_access_key,
             security_token=security_token,
             host=s3_endpoint,
-            )
+        )
 
 
 #
@@ -131,34 +133,27 @@ def _connect_s3(os_environ=None, get_ec2_metadata=None, boto_connect_s3=None):
 #
 
 class LogfileUriFormatter(string.Formatter):
+    mandatory_args = {'prefix', 'filename', 'year', 'month', 'day'}
 
-    mandatory_args = set(['prefix', 'filename', 'year', 'month', 'day'])
-
-    # It actually seems like you will *always* want the fields above, simply
-    # because listing logfiles is going to be really slow if you haven't
-    # partitioned them by (year, month, day).
+    # It actually seems like you will *always* want the fields above,
+    # simply because listing logfiles is going to be really slow if you
+    # haven't partitioned them by (year, month, day).
     #
     # So, leave out "expected_args"
     #
-    # expected_args = mandatory_args.union(set(['year', 'month', 'day']))
+    # expected_args = mandatory_args.union({'year', 'month', 'day'})
 
     def check_unused_args(self, used_args, args, kwargs):
         missing_args = self.mandatory_args - used_args
         if missing_args:
-            raise ValueError('upload_uri lacks mandatory fields: {}'.format(
-                ', '.join(sorted(missing_args))
+            raise ValueError(
+                'upload_uri lacks mandatory fields: {}'.format(
+                    ', '.join(sorted(missing_args))
                 ))
-
-        # missing_args = self.expected_args - used_args
-        # if missing_args:
-        #     logging.warning(
-        #         'upload_uri is missing these recommended fields: %s',
-        #         ', '.join(sorted(missing_args))
-        #         )
-
 
 
 LOG_URI_FORMATTER = LogfileUriFormatter()
+
 
 def get_logfile_uri(upload_uri, logfile):
     """
@@ -170,7 +165,8 @@ def get_logfile_uri(upload_uri, logfile):
 
         s3://nt8.logs.us-west-2/haproxy/2013/07/27/haproxy-20130727T0100Z-i-34aea3fe.log.gz
     """
-    return LOG_URI_FORMATTER.format(upload_uri,
+    return LOG_URI_FORMATTER.format(
+        upload_uri,
         prefix=logfile.prefix,
         year=logfile.timestamp.year,
         month='{:02d}'.format(logfile.timestamp.month),
@@ -178,24 +174,24 @@ def get_logfile_uri(upload_uri, logfile):
         hour='{:02d}'.format(logfile.timestamp.hour),
         minute='{:02d}'.format(logfile.timestamp.minute),
         filename=logfile.filename
-        )
+    )
 
 
 def get_parent_dir_uris(logfile_uris):
     """
-    Takes an iterable of logfile_uri's. Returns back a set of all those URI's
-    parent directories.
+    Takes an iterable of logfile_uri's. Returns back a set of all those
+    URIs' parent directories.
     """
 
     return set(
         logfile_uri.rsplit('/', 1)[0] + '/'
         for logfile_uri in logfile_uris
-        )
+    )
 
 
 class S3Uploader(BaseUploader):
-
-    def __init__(self, upload_uri, connect_s3=None, storage_uri_for_key=None):
+    def __init__(self, upload_uri, connect_s3=None,
+                 storage_uri_for_key=None):
         """
         Takes an upload_uri, and two optional arguments for dependency
         injection during test runs:
@@ -204,7 +200,7 @@ class S3Uploader(BaseUploader):
             - storage_uri_for_key: a suitable implementation of
                                    boto.storage_uri_for_key()
         """
-        self.upload_uri = upload_uri
+        super(S3Uploader, self).__init__(upload_uri)
 
         if connect_s3 is None:
             self.connect_s3 = _connect_s3
@@ -216,19 +212,21 @@ class S3Uploader(BaseUploader):
         else:
             self.storage_uri_for_key = storage_uri_for_key
 
+        self.s3_conn = None
+        self.bucket_cache = None
+
     def connect(self):
         self.s3_conn = self.connect_s3()
         self.bucket_cache = {}
 
-
     def _get_bucket(self, bucket_name):
-        logging.debug('s3_uploader.S3Uploader._get_bucket: %s', bucket_name)
+        logging.debug('s3_uploader.S3Uploader._get_bucket: %s',
+                      bucket_name)
         bucket = self.bucket_cache.get(bucket_name)
         if bucket is None:
             bucket = self.s3_conn.get_bucket(bucket_name)
             self.bucket_cache[bucket_name] = bucket
         return bucket
-
 
     def check_uri(self):
         """
@@ -237,7 +235,8 @@ class S3Uploader(BaseUploader):
         Returns a string if any error occurred.
         """
         try:
-            logfile_uri = get_logfile_uri(self.upload_uri, parse.SAMPLE_LOGFILE)
+            logfile_uri = get_logfile_uri(self.upload_uri,
+                                          parse.SAMPLE_LOGFILE)
         except ValueError, e:
             return str(e)
 
@@ -247,8 +246,6 @@ class S3Uploader(BaseUploader):
             self.s3_conn.get_bucket(u.bucket_name)
         except boto.exception.S3ResponseError:
             return 'Failed to find bucket {}'.format(u.bucket_name)
-
-
 
     def scan_remote(self, logfiles):
         """
@@ -261,7 +258,7 @@ class S3Uploader(BaseUploader):
         logfile_uris = dict(
             (get_logfile_uri(self.upload_uri, logfile), logfile)
             for logfile in logfiles
-            )
+        )
 
         parent_dir_uris = get_parent_dir_uris(logfile_uris)
         for uri in parent_dir_uris:
@@ -280,7 +277,6 @@ class S3Uploader(BaseUploader):
 
         return uploaded_set, not_uploaded_set
 
-
     def upload_logfile(self, log_archive_dir, logfile):
         """
         Takes the path to the log archive directory and a LogFile
@@ -294,13 +290,13 @@ class S3Uploader(BaseUploader):
         key = bucket.get_key(u.object_name)
         if key is not None:
             logging.warning(
-                'S3Uploader.upload_logfile: %s has already been uploaded',
+                'S3Uploader.upload_logfile: %s already uploaded',
                 logfile_uri)
             return
         key = bucket.new_key(u.object_name)
         try:
             key.set_contents_from_filename(
                 os.path.join(log_archive_dir, logfile.filename)
-                )
+            )
         except boto.exception.BotoServerError, e:
             return e

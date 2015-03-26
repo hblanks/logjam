@@ -10,7 +10,6 @@ try:
 except ImportError:
     raven = None
 
-
 MIN_SLEEP_TIME = 1
 DEFAULT_INTERVAL = 60
 
@@ -49,7 +48,6 @@ def sentry_context(tags, sentry_dsn=None):
         raise
 
 
-
 def do_once(do_func, *args, **kwargs):
     """
     Calls do_func(*args, **kwargs).
@@ -83,6 +81,8 @@ def do_forever(do_func, interval_secs, *args, **kwargs):
             do_func(*args, **kwargs)
             elapsed_time = time.time() - start
 
-            sleep_time = max(interval_secs - elapsed_time, MIN_SLEEP_TIME)
-            logging.debug('service.do_forever: sleeping %.2f', sleep_time)
+            sleep_time = max(
+                interval_secs - elapsed_time, MIN_SLEEP_TIME)
+            logging.debug(
+                'service.do_forever: sleeping %.2f', sleep_time)
             time.sleep(sleep_time)
