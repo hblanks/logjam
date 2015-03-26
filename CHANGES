@@ -1,7 +1,7 @@
 
 
-0.0.4-beta
-----------
+0.0.4
+-----
 
 * Fix ``logjam-upload`` so that it keeps track of the files it's
   uploaded. This considerably reduces the number of S3 GET requests
